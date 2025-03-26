@@ -1,0 +1,56 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f9f9f9;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+form, table {
+    margin-top: 20px;
+}
+
+label, select, input, button {
+    margin: 5px;
+    padding: 8px;
+    font-size: 60px;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+a {
+    color: #f44336;
+    text-decoration: none;
+}
+
+body {
+    position: relative;
+}
+.lock-screen {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+}

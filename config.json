@@ -1,0 +1,16 @@
+{
+    "secret_key": "",
+    "scripts": [
+        ".py",
+        ".py",
+        ".py"
+    ],
+    "opload_folder": "C:/opload_path1231231",
+    "download_folder": "",
+    "destination_folder": "",
+    "correct_id": "1234",
+
+    "kmcd": "21400000",
+    "userid": "",
+    "userpw": ""
+}

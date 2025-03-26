@@ -1,0 +1,250 @@
+<!-- 引入 jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- 引入 DataTables CSS 和 JS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+    <div class="row">
+<!-- 添加新任务区域 -->
+<div class="col-md-2">
+    <div class="card mb-4">
+        <div class="card-header">新規タスクの追加</div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('run_now') }}">
+                <div class="mb-3">
+                    <label for="script_name" class="form-label">スクリプト</label>
+                    <select class="form-select" name="script_name" id="script_name" required >
+                        <option value="" disabled selected>ジョブを選択</option>
+                        {% for script in scripts %}
+                            <option value="{{ script }}">{{ script }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="execute_time" class="form-label">実行時間</label>
+                    <input type="datetime-local" class="form-control" name="execute_time" id="execute_time" required style="font-size: 14px;">
+                </div>
+                <button id="addTaskButton" type="submit" class="btn btn-primary w-100 mb-2">タスクを追加</button>
+                <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#confirmModal">即時実行</button>
+            </form>
+        </div>
+    </div>
+</div>
+<input type="file" id="fileInput" style="display: none;">
+
+<!-- 予定されたタスク -->
+<div class="col-md-10">
+    <h2 class="mb-3" style="font-size: 20px;">予定されたタスク</h2>
+    <table id="taskTable" class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>スクリプト名</th>
+                <th>ユーザー</th>
+                <th>実行時間</th>
+                <th>ステータス</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+                <tr class="{{ 'table-danger' if task.status == '错误' else '' }}">
+                    <td>{{ task.script }}</td>
+                    <td>{{ task.user }}</td>
+                    <td>{{ task.time }}</td>
+                    <td>{{ task.status }}</td>
+                    <td>
+                        <a href="{{ url_for('delete_task', job_id=task['job_id']) }}" class="btn btn-danger btn-sm">中止</a>
+                        {% if task.dwload_path %}
+                            <button class="btn btn-info btn-sm open-folder" data-folder="{{ task.dwload_path }}">フォルダを開く</button>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- 確認モーダル -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">実行の確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                選択したスクリプトを実行してもよろしいですか？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-warning" id="confirmExecute">実行</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var runNowUrl = "{{ url_for('run_now') | safe }}";  
+    var openFolderUrl = "{{ url_for('open_folder') | safe }}";  
+
+    $(document).ready(function() {
+        
+        // 初始化 DataTables
+        $('#taskTable').DataTable({
+            "order": [[1, "asc"]],
+            "columnDefs": [{
+                "targets": 1,
+                "type": "datetime",
+                "render": function(data, type, row) {
+                    return type === 'sort' ? new Date(data).getTime() : data;
+                }
+            }],
+            "autoWidth": false,  // 关闭自动调整
+            "language": {
+                "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/zh-CN.json"
+            }
+        });
+        
+        // 立即执行任务
+        $('#confirmExecute').click(function() {
+            const selectedScript = $('#script_name').val();
+            const enteredID = $('#unlock-id').val();  // 获取输入的 ID
+
+            if (!selectedScript) {
+                alert('未选择脚本！');
+                return;
+            }
+            
+            const localDate = new Date();
+            const year = localDate.getFullYear();
+            const month = String(localDate.getMonth() + 1).padStart(2, "0"); // 月份从 0 开始，需要 +1
+            const day = String(localDate.getDate()).padStart(2, "0");
+            const hours = String(localDate.getHours()).padStart(2, "0");
+            const minutes = String(localDate.getMinutes()).padStart(2, "0");
+
+            const selectedExecute = `${year}-${month}-${day}T${hours}:${minutes}`; // 格式化为 YYYY-MM-DDTHH:MM
+
+            
+            if (selectedScript.includes('Import')) {
+                const fileInput = $('<input type="file" accept=".xlsx">');
+                fileInput.trigger('click');
+                
+                fileInput.change(function(event) {
+                    const filePath = event.target.files[0];
+                    if (filePath) {
+                        const formData = new FormData();
+                        formData.append('script_name', selectedScript);
+                        formData.append('execute_time', selectedExecute);
+                        formData.append('file', filePath); // 添加文件到 FormData
+
+                        // 使用 $.ajax 上传文件
+                        $.ajax({
+                            url: runNowUrl, // 后端处理上传请求的 URL
+                            type: 'POST',
+                            data: formData,
+                            processData: false, // 不处理数据
+                            contentType: false, // 不设置 Content-Type
+                            success: function(response) {
+                                location.reload(); // 上传成功后刷新页面
+                            },
+                            error: function() {
+                                alert('文件上传失败');
+                            }
+                        });
+                    }
+                });
+            } else {
+                $.post(runNowUrl, { script_name: selectedScript, execute_time: selectedExecute,user: enteredID }).done(function() {
+                    location.reload();
+                });
+            }
+            
+            $('#confirmModal').modal('show');
+        });
+
+
+
+        // 添加任务
+        $('#addTaskButton').click(function(event) {
+
+            event.preventDefault();  // 阻止表单默认提交
+            const selectedScript = $('#script_name').val();
+            const selectedExecute = $('#execute_time').val();
+            const enteredID = $('#unlock-id').val();  // 获取输入的 ID
+
+            if (!selectedScript) {
+                alert('未选择脚本！');
+                return;
+            }
+            if (!selectedExecute) {
+                alert('未选择时间！');
+                return;
+            }
+            $('#confirmModal').modal('show');
+            $.post(runNowUrl, { script_name: selectedScript,
+                 execute_time: selectedExecute,
+                 user: enteredID})
+                .done(function() {
+                    location.reload();
+                });
+        });
+
+        // 点击打开文件夹
+        $(document).on('click', '.open-folder', function() {
+            const folderPath = $(this).data('folder');
+            $.ajax({
+                url: "/open_folder",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ job_id: 1 }),  // 传递任务 ID
+                success: function(response) {
+                    console.log("✅ 文件夹打开成功！");
+                },
+                error: function(xhr, status, error) {
+                    console.error("❌ 错误：", error);
+                }
+            });
+        });
+        //ID锁
+        $(document).ready(function() {
+            function lockPage() {
+                $('#taskTable, button, select, a').addClass('disabled').prop('disabled', true);
+            }
+
+            function unlockPage() {
+                $('#taskTable, button, select, a').removeClass('disabled').prop('disabled', false);
+                $("#unlock-id").prop("disabled", true);  // 锁定输入框，防止修改
+            }
+
+            var storedID = sessionStorage.getItem("unlocked");  // 改用 sessionStorage
+
+            if (storedID === "true") {
+                unlockPage();  // 之前已解锁，直接解锁
+            } else {
+                lockPage();  // 默认锁住
+            }
+
+            $("#unlock-id").on("keypress", function(event) {
+                if (event.which === 13) {  // Enter 键
+                    var enteredID = $(this).val();
+                    var correctID = "1234";  // 这里可以改成后端返回的 ID
+
+                    if (enteredID === correctID) {
+                        sessionStorage.setItem("unlocked", "true");  // 存储解锁状态
+                        unlockPage();
+                    } else {
+                        alert("❌ ID 不正确，请重试！");
+                        $(this).val("");  // 清空输入框
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}
