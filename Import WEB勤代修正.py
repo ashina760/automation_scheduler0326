@@ -237,7 +237,7 @@ def main():
     try:
         sys.stdout.flush()
         # 主程序
-        WEB登録('https://ccbji-cws.company.works-hi.com/self-workflow/cws/cws', userid, userpw)#网址url，ID，PW
+        WEB登録('11', userid, userpw)#网址url，ID，PW
         print("Open website")
         df = pd.read_excel(import_path)
         df.loc[len(df)] = ['2025-01-19', 'endend']  # 确保和原来的列数一致
