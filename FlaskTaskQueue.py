@@ -9,7 +9,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # 读取 config.json
-CONFIG_PATH = r"C:\Users\beite.dai.bp\OneDrive - Coca-Cola Bottlers Japan\デスクトップ\py\automation_scheduler\config.json"
+CONFIG_PATH = None
 with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     config = json.load(f)
 
