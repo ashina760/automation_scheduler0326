@@ -22,7 +22,7 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as f:
 
 import_path = sys.argv[1]
 kmcd = config["kmcd"]
-url = config["qdxzurl"]
+url = None
 userid = config["userid"]
 userpw = config["userpw"]
 destination_folder = config["destination_folder"]
