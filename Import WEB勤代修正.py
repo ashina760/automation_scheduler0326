@@ -16,7 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 
-CONFIG_PATH = r"C:\Users\beite.dai.bp\OneDrive - Coca-Cola Bottlers Japan\デスクトップ\py\automation_scheduler\config.json"
+CONFIG_PATH = None
 with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     config = json.load(f)
 
