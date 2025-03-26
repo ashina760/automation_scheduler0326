@@ -284,10 +284,4 @@ if __name__ == '__main__':
     main()
 
 
-# web勤代修正手作业逻辑
-# 库selenium 的方法(method) get find(name id xpath css selector)send click Select  库time
-# service options 的配置
-# 语法用chatgpt编程
-# def函数(function) 模块化编程 
-# 演示vsc的调试模式
-# 虚拟环境*
+
